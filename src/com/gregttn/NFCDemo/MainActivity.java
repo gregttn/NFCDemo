@@ -9,7 +9,9 @@ import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
+import com.gregttn.NFCDemo.utils.NfcUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,15 +19,20 @@ import java.util.List;
 public class MainActivity extends Activity {
     public static final String NFC_NOT_SUPPORTED_ERROR = "Your device does not support NFC";
     public static final String NFC_NOT_ENABLED_ERROR = "NFC is not enabled on your device";
+    public static final String TEXT_PLAIN_MIME_TYPE = "text/plain";
 
     private NfcAdapter nfcAdapter;
     private PendingIntent nfcPendingIntent;
     private IntentFilter[] exchangeFilters;
 
+    private TextView nfcContent;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+
+        nfcContent = (TextView) findViewById(R.id.nfcContent);
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
         validateNfcAdapter();
@@ -33,9 +40,8 @@ public class MainActivity extends Activity {
         nfcPendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
 
         IntentFilter ndefDetected = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
-
         try {
-            ndefDetected.addDataType("text/plain");
+            ndefDetected.addDataType(TEXT_PLAIN_MIME_TYPE);
         } catch (IntentFilter.MalformedMimeTypeException e) {
            Log.w(getLocalClassName(), e);
         }
@@ -58,8 +64,8 @@ public class MainActivity extends Activity {
         super.onResume();
 
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
-            List<NdefMessage> ndefMessages = extractMessages(getIntent());
-            Log.i("", new String(ndefMessages.get(0).getRecords()[0].getPayload()));
+            displayNfcMessageIfPresent(getIntent());
+            setIntent(new Intent());
         }
 
         nfcAdapter.enableForegroundDispatch(this, nfcPendingIntent, exchangeFilters, null);
@@ -68,21 +74,16 @@ public class MainActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
-            List<NdefMessage> msgs = extractMessages(intent);
-            Log.d(getLocalClassName(), new String(msgs.get(0).getRecords()[0].getPayload()));
+            displayNfcMessageIfPresent(intent);
         }
     }
 
-    private List<NdefMessage> extractMessages(Intent intent) {
-        List<NdefMessage> messages = new ArrayList<NdefMessage>();
-        Parcelable[] rawMessages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+    private void displayNfcMessageIfPresent(Intent intent) {
+        List<NdefMessage> msgs = NfcUtils.extractMessages(intent);
 
-        if (rawMessages != null) {
-            for (Parcelable rawMessage : rawMessages) {
-                messages.add((NdefMessage) rawMessage);
-            }
+        if(msgs.isEmpty()) {
+            String message = new String(msgs.get(0).getRecords()[0].getPayload());
+            nfcContent.setText(message);
         }
-
-        return messages;
     }
 }
