@@ -1,0 +1,6 @@
+/out/*
+project.properties
+/.idea/*
+GCMDemoAndroidApp.iml
+/gen/*
+local.properties
