@@ -4,6 +4,11 @@
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
         >
+    <Button
+        android:id="@+id/writeRandomUUID"
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:text="Write Random UUID"/>
     <TextView
             android:id="@+id/nfcContent"
             android:layout_width="fill_parent"
